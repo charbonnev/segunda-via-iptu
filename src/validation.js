@@ -5,7 +5,8 @@ function digits(value, size, label) {
     throw new AppError(400, 'DADOS_INVALIDOS', `${label} inválido.`);
   }
   const result = value.replace(/\D/g, '');
-  if (result.length !== size) throw new AppError(400, 'DADOS_INVALIDOS', `${label} deve ter ${size} dígitos.`);
+  const sizes = Array.isArray(size) ? size : [size];
+  if (!sizes.includes(result.length)) throw new AppError(400, 'DADOS_INVALIDOS', `${label} deve ter ${sizes.join(' ou ')} dígitos.`);
   return result;
 }
 
@@ -17,7 +18,10 @@ function objectBody(body) {
 
 export function validateCredentials(body) {
   objectBody(body);
-  const cpf = digits(body.cpf, 11, 'CPF');
+  const cpf = digits(body.cpfCnpj !== undefined ? body.cpfCnpj : body.cpf, [11, 14], 'CPF/CNPJ');
+  if (body.cpfCnpj !== undefined && body.cpf !== undefined && digits(body.cpf, [11, 14], 'CPF/CNPJ') !== cpf) {
+    throw new AppError(400, 'DADOS_INVALIDOS', 'cpfCnpj e cpf devem identificar o mesmo CPF/CNPJ quando ambos forem enviados.');
+  }
   if (typeof body.senha !== 'string' || !body.senha.trim() || body.senha.length > 256) {
     throw new AppError(400, 'DADOS_INVALIDOS', 'Informe a senha (até 256 caracteres).');
   }

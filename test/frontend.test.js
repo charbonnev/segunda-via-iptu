@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 import { createApp } from '../src/app.js';
 import { calculationItems, calculationPdf } from './helpers/calculation-pdf.js';
 
-test('formulário reutiliza sessão após recarregar, baixa PDF e permite sair', async t => {
+for (const docId of ['12345678900', '00.000.000/0000-00']) test(`formulário aceita ${docId.length === 18 ? 'CNPJ' : 'CPF'}, reutiliza sessão e permite sair`, async t => {
   const pages = await calculationItems();
   pages[0].find(i => i.text === '000.000.0000-0').text = '000.000.0000-0';
   const pdf = await calculationPdf(pages);
@@ -14,7 +14,7 @@ test('formulário reutiliza sessão após recarregar, baixa PDF e permite sair',
   let open = true;
   const app = createApp({ authenticate: async input => {
     logins++;
-    assert.deepEqual(input, { cpf: '12345678900', senha: 'teste-local' });
+    assert.deepEqual(input, { cpf: docId.replace(/\D/g, ''), senha: 'teste-local' });
     return {
       isOpen: () => open,
       close: async () => { open = false; },
@@ -33,7 +33,7 @@ test('formulário reutiliza sessão após recarregar, baixa PDF e permite sair',
   t.after(() => browser.close());
   const page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${server.address().port}`);
-  await page.getByLabel('CPF de acesso').fill('12345678900');
+  await page.getByLabel('CPF ou CNPJ de acesso').fill(docId);
   await page.getByLabel('Senha Web', { exact: true }).fill('teste-local');
   await page.getByRole('button', { name: 'Gerar segunda via' }).click();
   await page.getByText('Documento gerado. Você já pode baixar a segunda via.', { exact: true }).waitFor();

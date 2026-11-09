@@ -131,9 +131,9 @@ export function createApp({ generate, authenticate = openAuthenticatedSession, s
     try {
       if (!req.is('application/json')) throw new AppError(415, 'TIPO_INVALIDO', 'Envie Content-Type: application/json.');
       entry = sessions.get(sessionId(req));
-      if (!entry && req.body && typeof req.body === 'object' && !Array.isArray(req.body) && !('cpf' in req.body) && !('senha' in req.body)) {
+      if (!entry && req.body && typeof req.body === 'object' && !Array.isArray(req.body) && !('cpf' in req.body) && !('cpfCnpj' in req.body) && !('senha' in req.body)) {
         clearCookie(res);
-        throw new AppError(401, 'SESSAO_EXPIRADA', 'Entre com CPF e Senha Web para iniciar uma sessão.');
+        throw new AppError(401, 'SESSAO_EXPIRADA', 'Entre com CPF/CNPJ e Senha Web para iniciar uma sessão.');
       }
       const input = entry ? validateQuery(req.body) : validateInput(req.body);
       requireSlot(res);

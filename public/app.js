@@ -83,7 +83,7 @@ form.addEventListener('submit', async event => {
       status.textContent = 'Entrando com sua Senha Web…';
       const login = await fetch('/api/sessao', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cpf: payload.cpf, senha: payload.senha }), signal: controller.signal,
+        body: JSON.stringify({ cpfCnpj: payload.cpfCnpj, senha: payload.senha }), signal: controller.signal,
       });
       delete payload.senha;
       if (!login.ok) throw new Error((await login.json()).error || 'Não foi possível entrar.');

@@ -8,7 +8,7 @@ import { login, issueFromPage, openPortal, PortalSession } from '../src/portal.j
 const input = { cpf: '12345678900', senha: 'senha-ficticia', cadastro: '00000000000', exercicio: '2026' };
 const pdf = Buffer.from('%PDF-1.4\nfixture\n%%EOF');
 
-async function fixture(t, { active = 1, badPdf = false, cookieNotice = false, slowResource = false } = {}) {
+async function fixture(t, { active = 1, badPdf = false, cookieNotice = false, slowResource = false, credentialId = input.cpf } = {}) {
   const app = express();
   const stats = { logins: 0 };
   app.use(express.urlencoded({ extended: false }));
@@ -21,10 +21,10 @@ async function fixture(t, { active = 1, badPdf = false, cookieNotice = false, sl
     stats.logins++;
     assert.equal(req.body.__RequestVerificationToken, 'csrf');
     if (req.body.senha !== input.senha) return res.send('<div class="validation-summary-errors">Senha inválida</div>');
-    assert.equal(req.body.cpf, input.cpf);
+    assert.equal(req.body.cpf, credentialId);
     res.redirect('/Account/CarregarDelegado');
   });
-  app.get('/Account/CarregarDelegado', (req, res) => res.send(`<form action="/continuar" method="post"><label><input type="radio" name="perfil" value="titular">Titular : Cpf fictício</label><label><input type="radio" name="perfil" value="empresa" checked>Empresa</label><button>Continuar</button></form>`));
+  app.get('/Account/CarregarDelegado', (req, res) => res.send(`<form action="/continuar" method="post"><label><input type="radio" name="perfil" value="titular">Titular : ${credentialId.length === 14 ? 'Cnpj' : 'Cpf'} fictício</label><label><input type="radio" name="perfil" value="empresa" checked>Empresa</label><button>Continuar</button></form>`));
   app.post('/continuar', (req, res) => {
     assert.equal(req.body.perfil, 'titular');
     res.set('Set-Cookie', 'session=fixture; HttpOnly; SameSite=Lax').redirect('/portal');
@@ -125,4 +125,14 @@ test('sessão real de navegador emite duas vezes com um login e detecta expiraç
   assert.equal(stats.logins, 1);
   await session.close();
   assert.equal(session.isOpen(), false);
+});
+
+test('CNPJ é enviado integralmente ao login e seleciona titular CNPJ', async t => {
+  const cpf = '00000000000000';
+  const { url, stats } = await fixture(t, { credentialId: cpf });
+  const session = new PortalSession({ portalUrl: url });
+  t.after(() => session.close());
+  await session.authenticate({ cpf, senha: input.senha });
+  assert.deepEqual(await session.issue({ cadastro: input.cadastro, exercicio: input.exercicio }), pdf);
+  assert.equal(stats.logins, 1);
 });

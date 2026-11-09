@@ -15,10 +15,10 @@
     <section class="workspace">
       <form id="form">
         <div class="section-title"><span>01</span><h2>Acesso e consulta</h2></div>
-        <div id="session-panel" class="session-panel" hidden><span>Sessão conectada · CPF e senha não serão reenviados</span><button id="logout" type="button">Sair</button></div>
+        <div id="session-panel" class="session-panel" hidden><span>Sessão conectada · CPF/CNPJ e senha não serão reenviados</span><button id="logout" type="button">Sair</button></div>
         <fieldset id="credentials">
-        <label for="cpf">CPF de acesso</label>
-        <input id="cpf" name="cpf" type="text" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required maxlength="14">
+        <label for="cpf">CPF ou CNPJ de acesso</label>
+        <input id="cpf" name="cpfCnpj" type="text" inputmode="numeric" autocomplete="off" placeholder="CPF ou CNPJ" required maxlength="18">
         <label for="senha">Senha Web</label>
         <input id="senha" name="senha" type="password" autocomplete="off" placeholder="Sua senha da Prefeitura" required maxlength="256">
         <p class="hint">Use as credenciais da Senha Web, não a senha gov.br.</p>

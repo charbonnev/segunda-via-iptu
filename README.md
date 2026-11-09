@@ -12,7 +12,7 @@ npm run browser:install
 npm start
 ```
 
-Abra http://127.0.0.1:3000. Informe CPF, **Senha Web da Prefeitura**, SQL e exercício. As credenciais gov.br não são compatíveis com este fluxo.
+Abra http://127.0.0.1:3000. Informe CPF/CNPJ, **Senha Web da Prefeitura**, SQL e exercício. As credenciais gov.br não são compatíveis com este fluxo.
 
 O comando `npm start` precisa continuar em execução enquanto você usa a tela. Uma aba já carregada pode permanecer visível mesmo depois de o servidor parar.
 
@@ -27,21 +27,21 @@ Para parar: `systemctl --user stop segunda-via-iptu`. Esse serviço é transitó
 
 Caso o Chromium informe falta de bibliotecas do sistema, use `npx playwright install-deps chromium` conforme sua distribuição. Em servidores sem interface gráfica, mantenha HEADLESS=true (padrão).
 
-Variáveis opcionais: `PORT` (3000), `HEADLESS` (true) e `PORTAL_TIMEOUT_MS` (120000; entre 10000 e 300000). `.env.example` é uma referência; para carregar um `.env` próprio, execute `node --env-file=.env src/server.js`. Não coloque credenciais nele.
+Variáveis opcionais: `PORT` (3000), `HEADLESS` (true) e `PORTAL_TIMEOUT_MS` (120000; entre 10000 e 300000). `npm start` e `npm run dev` carregam automaticamente o arquivo `.env`, se existir. Para usar outra porta, crie um `.env` local com `PORT=3001` (há um modelo em `.env.example`). O arquivo é ignorado pelo Git. Não coloque credenciais nele. Variáveis já definidas no ambiente têm prioridade sobre o `.env`.
 
 ## API
 
 A documentação interativa Swagger UI está em **http://127.0.0.1:3000/docs/**. A especificação OpenAPI 3.0.3 está em **http://127.0.0.1:3000/openapi.json** (também em `/api/openapi.json`), pronta para importar no Postman, Insomnia ou gerar clientes.
 
-Para testar pelo Swagger: execute `POST /api/sessao` com CPF e Senha Web; depois execute as emissões com cadastro e exercício. O navegador envia automaticamente o cookie recebido. Não é necessário preencher **Authorize** nem copiar o cookie HttpOnly. **Execute** faz chamadas reais, incluindo login e emissão; use `GET /api/health` para um teste sem acessar a Prefeitura. A documentação usa arquivos locais, sem CDN ou validação externa da especificação.
+Para testar pelo Swagger: execute `POST /api/sessao` com CPF/CNPJ e Senha Web; depois execute as emissões com cadastro e exercício. O navegador envia automaticamente o cookie recebido. Não é necessário preencher **Authorize** nem copiar o cookie HttpOnly. **Execute** faz chamadas reais, incluindo login e emissão; use `GET /api/health` para um teste sem acessar a Prefeitura. A documentação usa arquivos locais, sem CDN ou validação externa da especificação.
 
 Faça o login uma vez com `POST /api/sessao`, usando `Content-Type: application/json`:
 
 ```json
-{ "cpf": "00000000000", "senha": "SUA_SENHA_WEB" }
+{ "cpfCnpj": "00.000.000/0000-00", "senha": "SUA_SENHA_WEB" }
 ```
 
-A resposta define um cookie de sessão `iptu_session`, com `HttpOnly` e `SameSite=Strict`, sem CPF ou senha. O front envia esse cookie automaticamente. Em outros clientes HTTP, conserve os cookies entre as chamadas (por exemplo, com um cookie jar).
+A resposta define um cookie de sessão `iptu_session`, com `HttpOnly` e `SameSite=Strict`, sem CPF/CNPJ ou senha. O front envia esse cookie automaticamente. Em outros clientes HTTP, conserve os cookies entre as chamadas (por exemplo, com um cookie jar).
 
 Depois, `POST /api/segunda-via` recebe apenas os dados da consulta:
 
@@ -64,7 +64,7 @@ O formato original de quatro campos continua aceito para abrir a sessão e emiti
 }
 ```
 
-CPF fictício no exemplo. CPF e SQL aceitam pontuação. A resposta de sucesso é o arquivo binário `application/pdf`, com `Content-Disposition: attachment`. Erros retornam JSON `{ "code": "...", "error": "..." }`.
+Documentos fictícios nos exemplos. `cpfCnpj` aceita CPF com 11 dígitos ou CNPJ numérico com 14 dígitos, com ou sem pontuação. O campo anterior `cpf` continua aceito para ambos os documentos. Se enviar os dois campos, os números devem coincidir após remover a pontuação. O cadastro SQL continua exigindo 11 dígitos. Essa validação verifica formato e comprimento; não verifica dígitos verificadores. A resposta de sucesso é o arquivo binário `application/pdf`, com `Content-Disposition: attachment`. Erros retornam JSON `{ "code": "...", "error": "..." }`.
 
 | Status | Situação |
 | --- | --- |
@@ -124,7 +124,7 @@ A extração usa texto e coordenadas do PDF, ancorados nos rótulos do modelo de
 
 O fluxo de consulta/download com campos de identificação vazios foi validado manualmente no portal em 09/11/2026. A via gerada preserva a informação de contribuinte protegida por sigilo fiscal. A seleção de empresas representadas não faz parte desta versão.
 
-Não é necessário gerar tokens manualmente: os cookies, anti-CSRF, PKCE e campos ASP.NET são tratados pelo navegador durante o fluxo oficial. O mesmo navegador e contexto são reutilizados durante a sessão, com um limite de quatro sessões locais simultâneas. Ao sair ou expirar, o navegador é fechado. Não é exportado um perfil persistente nem um arquivo de estado de autenticação. CPF e senha são usados apenas na autenticação e não são guardados no objeto da sessão. O download temporário do Playwright é excluído após a leitura do PDF. A aplicação não registra corpos de requisição ou erros brutos do navegador.
+Não é necessário gerar tokens manualmente: os cookies, anti-CSRF, PKCE e campos ASP.NET são tratados pelo navegador durante o fluxo oficial. O mesmo navegador e contexto são reutilizados durante a sessão, com um limite de quatro sessões locais simultâneas. Ao sair ou expirar, o navegador é fechado. Não é exportado um perfil persistente nem um arquivo de estado de autenticação. CPF/CNPJ e senha são usados apenas na autenticação e não são guardados no objeto da sessão. O download temporário do Playwright é excluído após a leitura do PDF. A aplicação não registra corpos de requisição ou erros brutos do navegador.
 
 Para compatibilidade com o navegador integrado, a API mantém o último PDF **em memória por até cinco minutos**, ou até a próxima emissão bem-sucedida. Os cabeçalhos `X-PDF-URL` e `X-PDF-Preview-URL` da resposta apontam para URLs HTTP locais com identificador aleatório, usadas pela interface para baixar e visualizar o arquivo. A resposta original continua sendo o PDF binário. Após expirar, as URLs retornam 404. Só o botão Baixar salva uma cópia escolhida pelo usuário.
 

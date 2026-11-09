@@ -46,7 +46,7 @@ async function waitForAccess(page, onStage) {
   }
   const hasCaptcha = await page.locator('iframe[src*="captcha"]').count();
   if (hasCaptcha) throw new AppError(409, 'INTERACAO_NECESSARIA', 'O portal solicitou CAPTCHA. Esta API não resolve desafios de autenticação.');
-  throw new AppError(401, 'LOGIN_RECUSADO', 'O portal recusou o acesso. Verifique CPF e Senha Web.');
+  throw new AppError(401, 'LOGIN_RECUSADO', 'O portal recusou o acesso. Verifique CPF/CNPJ e Senha Web.');
 }
 
 export async function login(page, { cpf, senha }, portalUrl = PORTAL_URL, onStage = () => {}) {
@@ -202,14 +202,14 @@ export class PortalSession {
     } catch (error) { await this.close(); throw error; }
   }
   async issue(input, options) {
-    if (!this.isOpen()) throw new AppError(401, 'SESSAO_EXPIRADA', 'A sessão expirou. Entre novamente com CPF e Senha Web.');
+    if (!this.isOpen()) throw new AppError(401, 'SESSAO_EXPIRADA', 'A sessão expirou. Entre novamente com CPF/CNPJ e Senha Web.');
     return this.run(async onStage => {
       onStage('abrir_portal');
       // Nova consulta na mesma sessão, incluindo cookies HttpOnly da Prefeitura.
       // Se a Prefeitura pedir login, não reenvia credenciais automaticamente.
       await openPortal(this.page, this.portalUrl);
       if (!await this.page.locator('#txt_SQL').isVisible()) {
-        throw new AppError(401, 'SESSAO_EXPIRADA', 'A sessão da Prefeitura expirou. Entre novamente com CPF e Senha Web.');
+        throw new AppError(401, 'SESSAO_EXPIRADA', 'A sessão da Prefeitura expirou. Entre novamente com CPF/CNPJ e Senha Web.');
       }
       return issueFromPage(this.page, input, onStage);
     }, options);

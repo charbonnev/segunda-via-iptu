@@ -10,10 +10,17 @@ const query = {
   cadastro: { type: 'string', pattern: '^(?:[.\\s/-]*\\d){11}[.\\s/-]*$', description: 'SQL com 11 dígitos; aceita pontuação e espaços.', example: '000.000.0000-0' },
   exercicio: { oneOf: [{ type: 'integer', minimum: 1900, maximum: 2100 }, { type: 'string', pattern: '^(?:19\\d{2}|20\\d{2}|2100)$' }], example: 2026 },
 };
+const documentPattern = '^(?:(?:[.\\s/-]*\\d){11}|(?:[.\\s/-]*\\d){14})[.\\s/-]*$';
 const credentials = {
-  cpf: { type: 'string', pattern: '^(?:[.\\s/-]*\\d){11}[.\\s/-]*$', description: 'CPF de acesso à Senha Web, com 11 dígitos. Exemplo fictício.', example: '00000000000' },
+  cpfCnpj: { type: 'string', pattern: documentPattern, description: 'CPF (11 dígitos) ou CNPJ numérico (14 dígitos) de acesso à Senha Web. Aceita pontuação e espaços.', example: '00.000.000/0000-00' },
+  cpf: { type: 'string', pattern: documentPattern, deprecated: true, description: 'Alias compatível de cpfCnpj: aceita CPF ou CNPJ. Se ambos os campos forem enviados, devem identificar o mesmo documento.', example: '00000000000' },
   senha: { type: 'string', format: 'password', writeOnly: true, minLength: 1, maxLength: 256, pattern: '\\S', description: 'Senha Web da Prefeitura (não é a senha gov.br). Não é guardada na sessão.', example: 'PREENCHA_SUA_SENHA_WEB' },
 };
+const credentialSchema = (withQuery = false) => ({
+  ...object(withQuery ? { ...credentials, ...query } : credentials, withQuery ? ['senha', 'cadastro', 'exercicio'] : ['senha']),
+  anyOf: [{ required: ['cpfCnpj'] }, { required: ['cpf'] }],
+  example: { cpfCnpj: '00.000.000/0000-00', senha: 'PREENCHA_SUA_SENHA_WEB', ...(withQuery ? { cadastro: '000.000.0000-0', exercicio: 2026 } : {}) },
+});
 const baseRow = (reference, factors) => object({
   area_m2: number, valor_m2_reais: number, ...Object.fromEntries(factors.map(name => [name, number])),
   base_calculo_reais: number, fator_especial: number, referencia_pdf: { type: 'string', enum: [reference] },
@@ -53,7 +60,7 @@ const sessionSecurity = [{ SessionCookie: [] }];
 const emission = asJson => ({
   tags: ['Emissão'], operationId: asJson ? 'emitirCalculoJson' : 'emitirPdf',
   summary: asJson ? 'Emitir notificação e receber o cálculo em JSON' : 'Emitir e baixar a notificação em PDF',
-  description: 'Com sessão ativa, envie apenas cadastro e exercicio. Sem sessão, informe também cpf e senha, ou faça POST /api/sessao antes. Uma única operação é executada por vez. A extração JSON usa o PDF emitido e não recalcula os valores.',
+  description: 'Com sessão ativa, envie apenas cadastro e exercicio. Sem sessão, informe também cpfCnpj (ou o alias cpf) e senha, ou faça POST /api/sessao antes. Uma única operação é executada por vez. A extração JSON usa o PDF emitido e não recalcula os valores.',
   security: [...sessionSecurity, {}], requestBody: emissionBody,
   responses: {
     200: {
@@ -77,7 +84,7 @@ export const openapi = {
   openapi: '3.0.3',
   info: {
     title: 'IPTU São Paulo · API local', version: '1.0.0',
-    description: 'Emissão da segunda via da **Notificação de Lançamento** e extração do cálculo em JSON (schema 3.0).\n\n**Como testar aqui:** 1. Expanda POST /api/sessao, clique em Try it out, informe seu CPF e Senha Web e execute. 2. Execute POST /api/segunda-via/json ou /api/segunda-via apenas com cadastro e exercício. O cookie é enviado automaticamente nesta mesma origem; não precisa preencher Authorize nem copiar tokens. 3. Ao terminar, execute DELETE /api/sessao.\n\nA sessão fica em memória por 15 minutos sem uso. A Prefeitura pode expirá-la antes; reiniciar o serviço encerra todas as sessões. As senhas não são armazenadas pela aplicação. Exemplos têm CPF e SQL fictícios. **Try it out / Execute realiza chamadas reais ao portal**. Não há resolução de CAPTCHA/MFA nem pagamento de impostos. Para outros clientes, conserve os cookies entre as chamadas. Todos os arquivos desta documentação são locais.',
+    description: 'Emissão da segunda via da **Notificação de Lançamento** e extração do cálculo em JSON (schema 3.0).\n\n**Como testar aqui:** 1. Expanda POST /api/sessao, clique em Try it out, informe seu CPF/CNPJ e Senha Web e execute. 2. Execute POST /api/segunda-via/json ou /api/segunda-via apenas com cadastro e exercício. O cookie é enviado automaticamente nesta mesma origem; não precisa preencher Authorize nem copiar tokens. 3. Ao terminar, execute DELETE /api/sessao.\n\nA sessão fica em memória por 15 minutos sem uso. A Prefeitura pode expirá-la antes; reiniciar o serviço encerra todas as sessões. As senhas não são armazenadas pela aplicação. Exemplos têm CPF e SQL fictícios. **Try it out / Execute realiza chamadas reais ao portal**. Não há resolução de CAPTCHA/MFA nem pagamento de impostos. Para outros clientes, conserve os cookies entre as chamadas. Todos os arquivos desta documentação são locais.',
   },
   servers: [{ url: '/', description: 'Mesma origem da documentação (servidor local)' }],
   tags: [{ name: 'Sessão' }, { name: 'Emissão' }, { name: 'Documentos' }, { name: 'Operação' }],
@@ -85,7 +92,7 @@ export const openapi = {
     '/api/sessao': {
       get: { tags: ['Sessão'], operationId: 'consultarSessao', summary: 'Verificar a sessão atual', description: 'Não renova o prazo de inatividade nem faz login na Prefeitura.', responses: { 200: json(ref('Sessao'), 'Estado local da sessão.'), ...errors(403, 500) } },
       post: {
-        tags: ['Sessão'], operationId: 'iniciarSessao', summary: 'Entrar com CPF e Senha Web',
+        tags: ['Sessão'], operationId: 'iniciarSessao', summary: 'Entrar com CPF/CNPJ e Senha Web',
         description: 'Substitui a sessão deste navegador. Use Senha Web da Prefeitura, não a senha gov.br. O cookie HttpOnly é recebido pelo navegador automaticamente.',
         requestBody: body(ref('Credenciais')),
         responses: { 200: { ...json(ref('Sessao'), 'Autenticado. Reutilize o cookie nas próximas chamadas.'), headers: { 'Set-Cookie': cookieHeader } }, ...errors(400, 401, 403, 409, 413, 415, 429, 500, 502, 504) },
@@ -103,9 +110,9 @@ export const openapi = {
   components: {
     securitySchemes: { SessionCookie: { type: 'apiKey', in: 'cookie', name: 'iptu_session', description: 'Obtido por POST /api/sessao. Nesta UI, use o login normal; o navegador recebe e envia o cookie HttpOnly automaticamente.' } },
     schemas: {
-      Credenciais: object(credentials), Consulta: object(query), LoginEConsulta: object({ ...credentials, ...query }),
+      Credenciais: credentialSchema(), Consulta: object(query), LoginEConsulta: credentialSchema(true),
       Sessao: object({ authenticated: { type: 'boolean' }, expiresAt: { type: 'integer', format: 'int64', nullable: true, description: 'Prazo de inatividade em milissegundos Unix, ou null sem sessão.' } }),
-      Erro: object({ code: { type: 'string', example: 'SESSAO_EXPIRADA' }, error: { type: 'string', example: 'Entre com CPF e Senha Web para iniciar uma sessão.' } }, ['error']),
+      Erro: object({ code: { type: 'string', example: 'SESSAO_EXPIRADA' }, error: { type: 'string', example: 'Entre com CPF/CNPJ e Senha Web para iniciar uma sessão.' } }, ['error']),
       Identificacao: object({ cadastro_imovel: { type: 'string', example: '000.000.0000-0' }, exercicio: { type: 'integer', example: 2026 }, notificacao_lancamento: { type: 'string', example: '01' } }),
       DadosTerreno: object({ area_incorporada_m2: number, area_nao_incorporada_m2: number, area_total_m2: number, testada_m: number }),
       DadosConstrucao: object({ area_construida_m2: number, area_ocupada_pela_construcao_m2: number, ano_construcao_corrigido: integer, padrao_construcao: text, uso: text }),
