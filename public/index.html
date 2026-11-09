@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Teste local de emissão da segunda via da notificação de lançamento do IPTU de São Paulo.">
+  <title>IPTU · Segunda via</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><span class="tag"><i></i> FERRAMENTA LOCAL</span><span class="city">SÃO PAULO / SP</span></header>
+    <section class="intro"><p class="eyebrow">DOCUMENTOS DO IMÓVEL</p><h1>Seu IPTU,<br>em poucos passos.</h1><p>Emita a segunda via da <strong>Notificação de Lançamento</strong> pelo portal da Prefeitura de São Paulo.</p></section>
+    <section class="workspace">
+      <form id="form">
+        <div class="section-title"><span>01</span><h2>Acesso e consulta</h2></div>
+        <div id="session-panel" class="session-panel" hidden><span>Sessão conectada · CPF e senha não serão reenviados</span><button id="logout" type="button">Sair</button></div>
+        <fieldset id="credentials">
+        <label for="cpf">CPF de acesso</label>
+        <input id="cpf" name="cpf" type="text" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required maxlength="14">
+        <label for="senha">Senha Web</label>
+        <input id="senha" name="senha" type="password" autocomplete="off" placeholder="Sua senha da Prefeitura" required maxlength="256">
+        <p class="hint">Use as credenciais da Senha Web, não a senha gov.br.</p>
+        </fieldset>
+        <div class="row"><div><label for="cadastro">Cadastro do imóvel (SQL)</label><input id="cadastro" name="cadastro" type="text" inputmode="numeric" value="000.000.0000-0" required maxlength="14"></div><div><label for="exercicio">Exercício</label><input id="exercicio" name="exercicio" type="number" value="2026" min="1900" max="2100" required></div></div>
+        <button id="submit" type="submit"><span>Gerar segunda via</span><span aria-hidden="true">↗</span></button>
+        <p class="privacy">Entre uma vez e reutilize o acesso nas próximas consultas. A sessão fica em memória por até 15 minutos sem uso; a senha não é guardada.</p>
+      </form>
+      <aside class="result" aria-labelledby="result-title">
+        <div class="section-title"><span>02</span><h2 id="result-title">Seu documento</h2></div>
+        <div id="empty" class="empty"><div class="paper" aria-hidden="true">PDF</div><h3>Pronto para consultar</h3><p>Preencha os dados ao lado.<br>O PDF ficará disponível aqui.</p></div>
+        <div id="status" role="status" aria-live="polite" hidden></div>
+        <a id="download" class="download" hidden>Baixar PDF <span aria-hidden="true">↓</span></a>
+        <button id="show-json" type="button" hidden>Ver dados em JSON <span aria-hidden="true">{ }</span></button>
+        <pre id="json-preview" aria-label="Dados extraídos do demonstrativo de cálculo" hidden></pre>
+        <iframe id="preview" title="Prévia da notificação de lançamento do IPTU" hidden></iframe>
+      </aside>
+    </section>
+    <footer><span>Emissão diretamente no portal oficial da Prefeitura. <a href="/docs/">Documentação da API</a></span><span>Notificação de lançamento · Não é guia de pagamento</span></footer>
+  </main>
+</body>
+</html>

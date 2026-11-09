@@ -1,0 +1,87 @@
+{
+  "schema_versao": "3.0",
+  "moeda": "BRL",
+  "identificacao": {
+    "cadastro_imovel": "000.000.0000-0",
+    "exercicio": 2026,
+    "notificacao_lancamento": "01"
+  },
+  "dados_cadastrais": {
+    "terreno": {
+      "area_incorporada_m2": 400,
+      "area_nao_incorporada_m2": 0,
+      "area_total_m2": 400,
+      "testada_m": 10
+    },
+    "construcao": {
+      "area_construida_m2": 80,
+      "area_ocupada_pela_construcao_m2": 80,
+      "ano_construcao_corrigido": 1978,
+      "padrao_construcao": "1-A",
+      "uso": "residência"
+    }
+  },
+  "demonstrativo_calculo": {
+    "bases_calculo": {
+      "construcao": {
+        "area_m2": 80,
+        "valor_m2_reais": 1499,
+        "fator_obsolescencia": 0.2,
+        "base_calculo_reais": 23984,
+        "fator_especial": 1,
+        "referencia_pdf": "A"
+      },
+      "terreno_incorporado": {
+        "area_m2": 400,
+        "valor_m2_reais": 740,
+        "fator_profundidade": 1,
+        "fator_tipo_terreno": 1,
+        "fator_condominio": 1,
+        "fator_fracao_ideal": 1,
+        "base_calculo_reais": 296000,
+        "fator_especial": 1,
+        "referencia_pdf": "B"
+      },
+      "terreno_nao_incorporado": {
+        "area_m2": null,
+        "valor_m2_reais": null,
+        "fator_profundidade": null,
+        "fator_tipo_terreno": null,
+        "fator_condominio": null,
+        "fator_fracao_ideal": null,
+        "base_calculo_reais": null,
+        "fator_especial": null,
+        "referencia_pdf": "C"
+      }
+    },
+    "imposto_predial": {
+      "base_calculo_reais": 179952,
+      "formula_base_calculo": "(A) + (B) - DESCONTO",
+      "aliquota": 0.01,
+      "desconto_acrescimo_reais": -479.96,
+      "imposto_calculado_reais": 1319.56,
+      "fator_especial": 1,
+      "deducoes_acrescimos_reais": -1150.9,
+      "imposto_a_pagar_reais": 168.66,
+      "referencia_pdf": "D"
+    },
+    "imposto_territorial": {
+      "base_calculo_reais": null,
+      "formula_base_calculo": "(C)",
+      "aliquota": null,
+      "desconto_acrescimo_reais": null,
+      "imposto_calculado_reais": null,
+      "fator_especial": null,
+      "deducoes_acrescimos_reais": null,
+      "imposto_a_pagar_reais": 0,
+      "referencia_pdf": "E"
+    },
+    "valor_a_pagar": {
+      "total_impostos_reais": 168.66,
+      "valor_compensado_ou_credito_nf_eletronica_reais": 0,
+      "atualizacao_monetaria_reais": 0,
+      "total_a_pagar_reais": 168.66,
+      "vencimento_primeira_prestacao": "2026-02-10"
+    }
+  }
+}
